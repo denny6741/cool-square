@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34525.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "boris square", "boris square\boris square.csproj", "{0E338FA4-BA27-47DD-B0B5-6175337A4310}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0E338FA4-BA27-47DD-B0B5-6175337A4310}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E338FA4-BA27-47DD-B0B5-6175337A4310}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E338FA4-BA27-47DD-B0B5-6175337A4310}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E338FA4-BA27-47DD-B0B5-6175337A4310}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DBFA88B0-A123-46D0-BF6C-D75C3F66DBDA}
+	EndGlobalSection
+EndGlobal
