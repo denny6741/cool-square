@@ -16,32 +16,36 @@ namespace borissquare
         private readonly Timer changeTextTimer;
         private bool showingFirstText = true;
 
-        private string textOptionA1 = "im just a bebeh";
-        private string textOptionA2 = "taking mah chips";
+        private string textOptionA1 = "I miss you Boris";
+        private string textOptionA2 = "Come back";
 
-        private string textOptionB1 = "smit";
-        private string textOptionB2 = "stinks";
+        private string textOptionB1 = "Ay mi gatito";
+        private string textOptionB2 = "Meow meow";
 
         private string currentText1 = "";
         private string currentText2 = "";
 
         private readonly int baseSize = 320;
-        private readonly Color colorA = Color.LightCyan;
-        private readonly Color colorB = Color.LightPink;
+        private Color colorA = Color.LightCyan;
+        private Color colorB = Color.LightPink;
 
-        // Keep a reference to the start panel so we can hide it after selection
         private readonly Panel startPanel;
-
-        // Panels inside the startPanel
         private readonly Panel optionsPanel;
         private readonly Panel customPanel;
+        private readonly Panel colorPanel;
 
-        // Random generator for the random option
         private readonly Random rng = new Random();
 
-        // Custom text inputs
         private readonly TextBox customTextBox1;
         private readonly TextBox customTextBox2;
+
+        private string selectedText1 = "";
+        private string selectedText2 = "";
+
+        private Button btnRandomColor;
+        private Button btnBackFromColor;
+
+        private Tuple<string, Color, Color>[] colorPresets;
 
         public MainForm()
         {
@@ -51,34 +55,30 @@ namespace borissquare
             StartPosition = FormStartPosition.CenterScreen;
             DoubleBuffered = true;
 
-            // Square custom control (hidden until user selects an option)
             square = new RotatingSquareControl
             {
                 Size = new Size(baseSize, baseSize),
                 FillColor = colorA,
-                LabelText = "", // will be set after selection
+                LabelText = "",
                 LabelForeColor = Color.Black,
                 LabelFont = new Font("Times New Roman", 24, FontStyle.Bold),
-                Visible = false // HIDE THE SQUARE UNTIL SELECTION
+                Visible = false
             };
 
             Controls.Add(square);
             CenterSquare();
 
-            // Timer for animation (~60 FPS) - don't start until user selects option
             timer = new Timer { Interval = 16 };
             timer.Tick += Timer_Tick;
 
-            // Timer for changing text - don't start until selection
-            changeTextTimer = new Timer { Interval = 5000 }; // 5 seconds
+            changeTextTimer = new Timer { Interval = 5000 };
             changeTextTimer.Tick += ChangeTextTimer_Tick;
 
-            // Build the start panel UI and store it in the field so we can hide it later
             startPanel = new Panel
             {
                 Size = ClientSize,
                 Location = new Point(0, 0),
-                BackColor = Color.FromArgb(220, 20, 20, 20), // semi-transparent overlay
+                BackColor = Color.FromArgb(220, 20, 20, 20),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
@@ -95,27 +95,26 @@ namespace borissquare
             };
             startPanel.Controls.Add(startLabel);
 
-            // Options panel with preset buttons and random + custom
             optionsPanel = new Panel { BackColor = Color.Transparent, Dock = DockStyle.Fill };
             startPanel.Controls.Add(optionsPanel);
 
             var btnOptionA = new Button
             {
-                Text = $"Option 1:\n\"{textOptionA1}\" / \"{textOptionA2}\"",
+                Text = "Option 1:\n\"" + textOptionA1 + "\"\n\"" + textOptionA2 + "\"",
                 AutoSize = false,
                 Size = new Size(220, 80),
                 BackColor = Color.White,
             };
-            btnOptionA.Click += (s, e) => StartWithTextsSafe(textOptionA1, textOptionA2);
+            btnOptionA.Click += (s, e) => ShowColorPanel(textOptionA1, textOptionA2);
 
             var btnOptionB = new Button
             {
-                Text = $"Option 2:\n\"{textOptionB1}\" / \"{textOptionB2}\"",
+                Text = "Option 2:\n\"" + textOptionB1 + "\"\n\"" + textOptionB2 + "\"",
                 AutoSize = false,
                 Size = new Size(220, 80),
                 BackColor = Color.White,
             };
-            btnOptionB.Click += (s, e) => StartWithTextsSafe(textOptionB1, textOptionB2);
+            btnOptionB.Click += (s, e) => ShowColorPanel(textOptionB1, textOptionB2);
 
             var btnRandom = new Button
             {
@@ -127,9 +126,9 @@ namespace borissquare
             btnRandom.Click += (s, e) =>
             {
                 if (rng.Next(2) == 0)
-                    StartWithTextsSafe(textOptionA1, textOptionA2);
+                    ShowColorPanel(textOptionA1, textOptionA2);
                 else
-                    StartWithTextsSafe(textOptionB1, textOptionB2);
+                    ShowColorPanel(textOptionB1, textOptionB2);
             };
 
             var btnCustom = new Button
@@ -141,13 +140,11 @@ namespace borissquare
             };
             btnCustom.Click += (s, e) => ShowCustomPanel();
 
-            // Add option buttons to optionsPanel
             optionsPanel.Controls.Add(btnOptionA);
             optionsPanel.Controls.Add(btnOptionB);
             optionsPanel.Controls.Add(btnRandom);
             optionsPanel.Controls.Add(btnCustom);
 
-            // Custom panel (hidden by default) with two textboxes and Start/Back buttons
             customPanel = new Panel { BackColor = Color.Transparent, Dock = DockStyle.Fill, Visible = false };
             startPanel.Controls.Add(customPanel);
 
@@ -180,13 +177,12 @@ namespace borissquare
             var lbl1 = new Label { Text = "Line 1:", ForeColor = Color.White, AutoSize = true, BackColor = Color.Transparent };
             var lbl2 = new Label { Text = "Line 2:", ForeColor = Color.White, AutoSize = true, BackColor = Color.Transparent };
 
-            var btnStartCustom = new Button { Text = "Start", AutoSize = false, Size = new Size(140, 44), BackColor = Color.White };
+            var btnStartCustom = new Button { Text = "Next", AutoSize = false, Size = new Size(140, 44), BackColor = Color.White };
             btnStartCustom.Click += (s, e) => StartCustomTexts();
 
             var btnBack = new Button { Text = "Back", AutoSize = false, Size = new Size(140, 44), BackColor = Color.White };
             btnBack.Click += (s, e) => ShowOptionsPanel();
 
-            // Add controls to customPanel
             customPanel.Controls.Add(lbl1);
             customPanel.Controls.Add(customTextBox1);
             customPanel.Controls.Add(lbl2);
@@ -194,10 +190,68 @@ namespace borissquare
             customPanel.Controls.Add(btnStartCustom);
             customPanel.Controls.Add(btnBack);
 
-            // Add the startPanel after adding the square so it overlays
+            colorPanel = new Panel { BackColor = Color.Transparent, Dock = DockStyle.Fill, Visible = false };
+            startPanel.Controls.Add(colorPanel);
+
+            var lblColorIntro = new Label
+            {
+                Text = "Choose colors for the square",
+                ForeColor = Color.White,
+                Font = new Font(FontFamily.GenericSansSerif, 18, FontStyle.Bold),
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Top,
+                Height = 80,
+                BackColor = Color.Transparent
+            };
+            colorPanel.Controls.Add(lblColorIntro);
+
+            colorPresets = new[]
+            {
+                new Tuple<string, Color, Color>("Light Cyan / Light Pink", Color.LightCyan, Color.LightPink),
+                new Tuple<string, Color, Color>("Blue / Purple", Color.DeepSkyBlue, Color.MediumPurple),
+                new Tuple<string, Color, Color>("Green / Yellow", Color.LightGreen, Color.LightYellow),
+                new Tuple<string, Color, Color>("Orange / Red", Color.Orange, Color.Tomato),
+                new Tuple<string, Color, Color>("Pink / Violet", Color.HotPink, Color.Violet),
+                new Tuple<string, Color, Color>("Aqua / Lime", Color.Aqua, Color.Lime)
+            };
+
+            foreach (var preset in colorPresets)
+            {
+                var btn = new Button
+                {
+                    Text = preset.Item1,
+                    AutoSize = false,
+                    Size = new Size(200, 60),
+                    BackColor = Color.White,
+                    Tag = preset
+                };
+                btn.Click += (s, e) =>
+                {
+                    var colors = (Tuple<string, Color, Color>)((Button)s).Tag;
+                    colorA = colors.Item2;
+                    colorB = colors.Item3;
+                    StartWithTextsSafe(selectedText1, selectedText2);
+                };
+                colorPanel.Controls.Add(btn);
+            }
+
+            btnRandomColor = new Button { Text = "Random Colors", AutoSize = false, Size = new Size(200, 60), BackColor = Color.White };
+            btnRandomColor.Click += (s, e) =>
+            {
+                var randomPreset = colorPresets[rng.Next(colorPresets.Length)];
+                colorA = randomPreset.Item2;
+                colorB = randomPreset.Item3;
+                StartWithTextsSafe(selectedText1, selectedText2);
+            };
+            colorPanel.Controls.Add(btnRandomColor);
+
+            btnBackFromColor = new Button { Text = "Back", AutoSize = false, Size = new Size(140, 44), BackColor = Color.White };
+            btnBackFromColor.Click += (s, e) => ShowOptionsPanel();
+            colorPanel.Controls.Add(btnBackFromColor);
+
             Controls.Add(startPanel);
 
-            // Layout the start panel controls on resize/initial
             Layout += (s, e) =>
             {
                 startPanel.Size = ClientSize;
@@ -205,7 +259,6 @@ namespace borissquare
 
                 int gap = 20;
 
-                // Layout options buttons in the center row
                 int totalWidth = btnOptionA.Width + gap + btnOptionB.Width + gap + btnRandom.Width + gap + btnCustom.Width;
                 int startX = (startPanel.Width - totalWidth) / 2;
                 int y = startPanel.Height / 2 - btnOptionA.Height / 2 + 20;
@@ -215,7 +268,6 @@ namespace borissquare
                 btnRandom.Location = new Point(startX + btnOptionA.Width + gap + btnOptionB.Width + gap, y);
                 btnCustom.Location = new Point(startX + btnOptionA.Width + gap + btnOptionB.Width + gap + btnRandom.Width + gap, y);
 
-                // Layout custom panel elements roughly centered
                 int cpY = startPanel.Height / 2 - 80;
                 lbl1.Location = new Point((startPanel.Width - customTextBox1.Width) / 2 - 60, cpY);
                 customTextBox1.Location = new Point((startPanel.Width - customTextBox1.Width) / 2, cpY - 4);
@@ -224,11 +276,25 @@ namespace borissquare
                 btnStartCustom.Location = new Point((startPanel.Width / 2) - btnStartCustom.Width - 8, cpY + 100);
                 btnBack.Location = new Point((startPanel.Width / 2) + 8, cpY + 100);
 
-                // Keep square centered
+                int colorY = 120;
+                int colorX = (startPanel.Width - (3 * 200 + 2 * gap)) / 2;
+                int colorBtnIndex = 0;
+                foreach (Control ctrl in colorPanel.Controls)
+                {
+                    if (ctrl is Button && ctrl != btnBackFromColor && ctrl != btnRandomColor)
+                    {
+                        int row = colorBtnIndex / 3;
+                        int col = colorBtnIndex % 3;
+                        ctrl.Location = new Point(colorX + col * (200 + gap), colorY + row * (60 + gap));
+                        colorBtnIndex++;
+                    }
+                }
+                btnRandomColor.Location = new Point((startPanel.Width - btnRandomColor.Width) / 2, colorY + 180);
+                btnBackFromColor.Location = new Point((startPanel.Width - btnBackFromColor.Width) / 2, colorY + 260);
+
                 CenterSquare();
             };
 
-            // Keyboard: Esc to close, Space to pause/resume (works after start)
             KeyPreview = true;
             KeyDown += (s, e) =>
             {
@@ -240,7 +306,6 @@ namespace borissquare
                 }
             };
 
-            // Start with timers stopped; user chooses option first
             stopwatch.Reset();
         }
 
@@ -248,15 +313,25 @@ namespace borissquare
         {
             optionsPanel.Visible = false;
             customPanel.Visible = true;
+            colorPanel.Visible = false;
         }
 
         private void ShowOptionsPanel()
         {
             customPanel.Visible = false;
             optionsPanel.Visible = true;
+            colorPanel.Visible = false;
         }
 
-        // Wrapper that catches exceptions and shows them
+        private void ShowColorPanel(string text1, string text2)
+        {
+            selectedText1 = text1;
+            selectedText2 = text2;
+            optionsPanel.Visible = false;
+            customPanel.Visible = false;
+            colorPanel.Visible = true;
+        }
+
         private void StartWithTextsSafe(string first, string second)
         {
             try
@@ -276,13 +351,11 @@ namespace borissquare
 
             if (string.IsNullOrEmpty(a) && string.IsNullOrEmpty(b))
             {
-                // nothing entered — use a simple default
                 a = "custom";
                 b = "";
             }
 
-            // If only one line entered, alternate with empty second string (will just show one)
-            StartWithTextsSafe(a, b);
+            ShowColorPanel(a, b);
         }
 
         private void StartWithTexts(string first, string second)
@@ -293,7 +366,6 @@ namespace borissquare
             square.LabelText = currentText1;
             square.Invalidate();
 
-            // hide the start UI and show the square
             if (startPanel != null)
             {
                 startPanel.Visible = false;
@@ -301,7 +373,6 @@ namespace borissquare
             square.Visible = true;
             square.BringToFront();
 
-            // start animation and text timer
             stopwatch.Restart();
             timer.Start();
             changeTextTimer.Start();
@@ -329,22 +400,18 @@ namespace borissquare
         {
             double t = stopwatch.ElapsedMilliseconds / 1000.0;
 
-            // Flashing color (sine between 0..1)
             double sine = (Math.Sin(t * 2.0 * Math.PI * 1.0) + 1.0) / 2.0;
             Color bg = Lerp(colorA, colorB, sine);
             square.FillColor = bg;
 
-            // Slight scale pulsing
             double scale = 1.0 + 0.06 * Math.Sin(t * 2.0 * Math.PI * 1.0);
             int newSize = (int)(baseSize * scale);
             newSize = Math.Max(80, newSize);
             square.Size = new Size(newSize, newSize);
             CenterSquare();
 
-            // Keep text color black
             square.LabelForeColor = Color.Black;
 
-            // Request repaint
             square.Invalidate();
         }
 
@@ -362,7 +429,6 @@ namespace borissquare
             square.Invalidate();
         }
 
-        // Custom control that draws a filled square and centered text. (No rotation)
         private class RotatingSquareControl : Control
         {
             public Color FillColor { get; set; } = Color.LightCyan;
@@ -372,7 +438,6 @@ namespace borissquare
 
             public RotatingSquareControl()
             {
-                // Enable double buffering and custom painting
                 SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
                          ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
                 UpdateStyles();
@@ -391,20 +456,17 @@ namespace borissquare
                 int w = Width;
                 int h = Height;
 
-                // Draw rounded rectangle in the control bounds
                 var rect = new RectangleF(0, 0, w, h);
-                float radius = Math.Min(rect.Width, rect.Height) * 0.06f; // corner radius
+                float radius = Math.Min(rect.Width, rect.Height) * 0.06f;
 
                 using (var path = RoundedRect(rect, radius))
                 using (var brush = new SolidBrush(FillColor))
                 using (var pen = new Pen(Color.FromArgb(40, Color.Black), 0.5f))
                 {
                     g.FillPath(brush, path);
-                    // subtle border for definition
                     g.DrawPath(pen, path);
                 }
 
-                // Draw text centered (supports newlines)
                 if (!string.IsNullOrEmpty(LabelText))
                 {
                     var sf = new StringFormat
@@ -421,7 +483,6 @@ namespace borissquare
                 }
             }
 
-            // Create a rounded rectangle GraphicsPath
             private static GraphicsPath RoundedRect(RectangleF baseRect, float radius)
             {
                 var path = new GraphicsPath();
@@ -436,18 +497,14 @@ namespace borissquare
 
                 var arc = new RectangleF(baseRect.Location, new SizeF(diameter, diameter));
 
-                // top-left arc
                 path.AddArc(arc, 180, 90);
 
-                // top edge
                 arc.X = baseRect.Right - diameter;
                 path.AddArc(arc, 270, 90);
 
-                // right edge
                 arc.Y = baseRect.Bottom - diameter;
                 path.AddArc(arc, 0, 90);
 
-                // bottom edge
                 arc.X = baseRect.Left;
                 path.AddArc(arc, 90, 90);
 
@@ -455,7 +512,6 @@ namespace borissquare
                 return path;
             }
 
-            // Adjust font size to fit into the available rectangle area (simple heuristic)
             private static Font AdjustFontToFit(Graphics g, Font baseFont, string text, float maxWidth, float maxHeight)
             {
                 if (string.IsNullOrEmpty(text))
@@ -466,7 +522,6 @@ namespace borissquare
                 Font testFont = new Font(baseFont.FontFamily, emSize, style);
                 var sf = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Near };
 
-                // Reduce font size until it fits or reaches a small threshold
                 for (float size = emSize; size > 6f; size -= 1f)
                 {
                     testFont.Dispose();
@@ -476,7 +531,6 @@ namespace borissquare
                         return testFont;
                 }
 
-                // fallback to smallest
                 testFont.Dispose();
                 return new Font(baseFont.FontFamily, 6f, style);
             }
